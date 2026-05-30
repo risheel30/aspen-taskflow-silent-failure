@@ -14,6 +14,7 @@ def _serialize(job):
         "status": job.status,
         "steps": job.steps,
         "results": job.results,
+        "total": job.total,
         "ran_count": job.ran_count,
     }
 

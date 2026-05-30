@@ -21,6 +21,7 @@ class Job:
     status: str
     steps: list
     results: dict = field(default_factory=dict)
+    total: int = 0
     ran_count: int = 0
 
 

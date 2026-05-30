@@ -14,6 +14,7 @@ def create_job(owner: User, steps):
         status="queued",
         steps=steps,
         results={},
+        total=0,
         ran_count=0,
     )
     db.jobs[job.id] = job
@@ -39,11 +40,15 @@ def run_job(job: Job):
 
     job.ran_count += 1
     results = {}
+    total = 0
     for step in job.steps:
         ok = executor.run_step(step)
         results[step["id"]] = "succeeded" if ok else "failed"
+        if ok:
+            total += step.get("amount", 0)
 
     job.results = results
+    job.total = total
     job.status = "done"
     return job, 200, None
 

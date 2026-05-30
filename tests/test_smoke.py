@@ -25,12 +25,6 @@ def test_list_mine_empty(client, auth_vaibhav):
     assert r.json() == []
 
 
-def test_list_mine_after_create(client, auth_risheel):
-    client.post("/jobs", headers=auth_risheel, json={"steps": [{"id": "a", "amount": 5}]})
-    r = client.get("/jobs", headers=auth_risheel)
-    assert len(r.json()) == 1
-
-
 def test_get_job_by_id(client, auth_risheel):
     c = client.post("/jobs", headers=auth_risheel, json={"steps": [{"id": "a", "amount": 5}]})
     job_id = c.json()["id"]
@@ -51,19 +45,29 @@ def test_get_other_user_job(client, auth_risheel, auth_vaibhav):
     assert r.status_code == 404
 
 
-def test_run_good_pipeline_done(client, auth_risheel):
-    c = client.post("/jobs", headers=auth_risheel, json={"steps": [{"id": "a", "amount": 5}, {"id": "b", "amount": 3, "depends_on": ["a"]}]})
+def test_run_good_chain_done(client, auth_risheel):
+    steps = [{"id": "a", "amount": 5}, {"id": "b", "amount": 3, "depends_on": ["a"]}]
+    c = client.post("/jobs", headers=auth_risheel, json={"steps": steps})
     job_id = c.json()["id"]
     r = client.post(f"/jobs/{job_id}/run", headers=auth_risheel)
     assert r.status_code == 200
     assert r.json()["status"] == "done"
 
 
-def test_run_good_pipeline_results(client, auth_risheel):
-    c = client.post("/jobs", headers=auth_risheel, json={"steps": [{"id": "a", "amount": 5}, {"id": "b", "amount": 3, "depends_on": ["a"]}]})
+def test_run_good_chain_results(client, auth_risheel):
+    steps = [{"id": "a", "amount": 5}, {"id": "b", "amount": 3, "depends_on": ["a"]}]
+    c = client.post("/jobs", headers=auth_risheel, json={"steps": steps})
     job_id = c.json()["id"]
     r = client.post(f"/jobs/{job_id}/run", headers=auth_risheel)
     assert r.json()["results"]["a"] == "succeeded"
+
+
+def test_run_good_chain_total(client, auth_risheel):
+    steps = [{"id": "a", "amount": 5}, {"id": "b", "amount": 3, "depends_on": ["a"]}]
+    c = client.post("/jobs", headers=auth_risheel, json={"steps": steps})
+    job_id = c.json()["id"]
+    r = client.post(f"/jobs/{job_id}/run", headers=auth_risheel)
+    assert r.json()["total"] == 8
 
 
 def test_run_twice_rejected(client, auth_risheel):

@@ -1,8 +1,11 @@
 from taskflow.models import User
 
+POOL_CAPACITY = 3
+
 users: dict = {}
 tokens: dict = {}
 jobs: dict = {}
+pool: dict = {"available": POOL_CAPACITY}
 
 _counter = {"n": 0}
 
@@ -16,6 +19,7 @@ def seed():
     users.clear()
     tokens.clear()
     jobs.clear()
+    pool["available"] = POOL_CAPACITY
     _counter["n"] = 0
 
     cast = [

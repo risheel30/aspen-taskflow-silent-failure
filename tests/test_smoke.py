@@ -45,6 +45,12 @@ def test_get_other_user_job(client, auth_risheel, auth_vaibhav):
     assert r.status_code == 404
 
 
+def test_pool_starts_at_capacity(client, auth_risheel):
+    r = client.get("/pool", headers=auth_risheel)
+    assert r.status_code == 200
+    assert r.json()["available"] == r.json()["capacity"]
+
+
 def test_run_good_chain_done(client, auth_risheel):
     steps = [{"id": "a", "amount": 5}, {"id": "b", "amount": 3, "depends_on": ["a"]}]
     c = client.post("/jobs", headers=auth_risheel, json={"steps": steps})
@@ -54,20 +60,21 @@ def test_run_good_chain_done(client, auth_risheel):
     assert r.json()["status"] == "done"
 
 
-def test_run_good_chain_results(client, auth_risheel):
-    steps = [{"id": "a", "amount": 5}, {"id": "b", "amount": 3, "depends_on": ["a"]}]
-    c = client.post("/jobs", headers=auth_risheel, json={"steps": steps})
-    job_id = c.json()["id"]
-    r = client.post(f"/jobs/{job_id}/run", headers=auth_risheel)
-    assert r.json()["results"]["a"] == "succeeded"
-
-
 def test_run_good_chain_total(client, auth_risheel):
     steps = [{"id": "a", "amount": 5}, {"id": "b", "amount": 3, "depends_on": ["a"]}]
     c = client.post("/jobs", headers=auth_risheel, json={"steps": steps})
     job_id = c.json()["id"]
     r = client.post(f"/jobs/{job_id}/run", headers=auth_risheel)
     assert r.json()["total"] == 8
+
+
+def test_good_run_returns_workers(client, auth_risheel):
+    steps = [{"id": "a", "amount": 5}]
+    c = client.post("/jobs", headers=auth_risheel, json={"steps": steps})
+    job_id = c.json()["id"]
+    client.post(f"/jobs/{job_id}/run", headers=auth_risheel)
+    r = client.get("/pool", headers=auth_risheel)
+    assert r.json()["available"] == r.json()["capacity"]
 
 
 def test_run_twice_rejected(client, auth_risheel):

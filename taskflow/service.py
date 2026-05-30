@@ -1,4 +1,4 @@
-from taskflow import db, executor
+from taskflow import db, executor, pool
 from taskflow.models import Job, User
 
 
@@ -16,6 +16,7 @@ def create_job(owner: User, steps):
         results={},
         total=0,
         ran_count=0,
+        reserved=0,
     )
     db.jobs[job.id] = job
     return job, 200, None
@@ -37,8 +38,11 @@ def list_jobs(owner: User):
 def run_job(job: Job):
     if job.status != "queued":
         return None, 409, "already run"
+    if not pool.reserve(pool.RESERVE):
+        return None, 429, "no capacity"
 
     job.ran_count += 1
+    job.reserved = pool.RESERVE
     results = {}
     total = 0
     for step in job.steps:
@@ -50,6 +54,8 @@ def run_job(job: Job):
     job.results = results
     job.total = total
     job.status = "done"
+    if all(r == "succeeded" for r in results.values()):
+        pool.release(pool.RESERVE)
     return job, 200, None
 
 

@@ -1,24 +1,20 @@
 from taskflow import db, executor
 from taskflow.models import Job, User
 
-MAX_ACTIVE = 2
-ACTIVE_STATES = ("queued", "running")
 
-
-def active_jobs(owner_id: str):
-    return [j for j in db.jobs.values() if j.owner_id == owner_id and j.status in ACTIVE_STATES]
-
-
-def create_job(owner: User, kind: str, payload: dict):
-    if kind not in executor.VALID_KINDS:
-        return None, 400, "invalid kind"
-
-    job = Job(id=db.new_id("job"), owner_id=owner.id, kind=kind, status="queued", payload=payload)
+def create_job(owner: User, items):
+    if not isinstance(items, list):
+        return None, 400, "items must be a list"
+    job = Job(
+        id=db.new_id("job"),
+        owner_id=owner.id,
+        status="queued",
+        items=items,
+        processed=0,
+        total=0,
+        failed=[],
+    )
     db.jobs[job.id] = job
-
-    if len(active_jobs(owner.id)) > MAX_ACTIVE:
-        return None, 429, "quota exceeded"
-
     return job, 200, None
 
 
@@ -37,9 +33,19 @@ def list_jobs(owner: User):
 
 def run_job(job: Job):
     job.status = "running"
-    result = executor.execute(job)
-    job.result = result
-    job.status = "succeeded"
+    total = 0
+    processed = 0
+    failed = []
+    for item in job.items:
+        ok = executor.process_item(item)
+        if not ok:
+            failed.append(item.get("id"))
+        total += item.get("amount", 0)
+        processed += 1
+    job.processed = processed
+    job.total = total
+    job.failed = failed
+    job.status = "done"
     return job
 
 

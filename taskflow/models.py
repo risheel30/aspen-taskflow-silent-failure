@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -16,12 +16,12 @@ class User:
 class Job:
     id: str
     owner_id: str
-    kind: str
     status: str
-    payload: dict
-    result: Optional[dict] = None
+    items: list
+    processed: int = 0
+    total: int = 0
+    failed: list = field(default_factory=list)
 
 
 class CreateJobBody(BaseModel):
-    kind: str
-    payload: dict = Field(default_factory=dict)
+    items: list = Field(default_factory=list)

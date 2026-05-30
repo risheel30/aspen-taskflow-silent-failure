@@ -1,4 +1,4 @@
-from taskflow.models import Job, User
+from taskflow.models import User
 
 users: dict = {}
 tokens: dict = {}

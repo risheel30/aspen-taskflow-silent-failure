@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
-JOB_STATUSES = ("queued", "running", "done", "partial", "failed", "cancelled")
+JOB_STATUSES = ("queued", "running", "done", "failed", "cancelled")
+STEP_STATUSES = ("pending", "succeeded", "failed", "skipped")
 
 
 @dataclass
@@ -19,11 +19,16 @@ class Job:
     id: str
     owner_id: str
     status: str
-    items: list
-    processed: int = 0
-    total: int = 0
-    failed: list = field(default_factory=list)
+    steps: list
+    results: dict = field(default_factory=dict)
+    ran_count: int = 0
+
+
+class Step(BaseModel):
+    id: str
+    amount: float = 0
+    depends_on: list = Field(default_factory=list)
 
 
 class CreateJobBody(BaseModel):
-    items: list = Field(default_factory=list)
+    steps: list[Step] = Field(default_factory=list)

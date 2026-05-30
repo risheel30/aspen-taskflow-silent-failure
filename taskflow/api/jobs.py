@@ -12,16 +12,16 @@ def _serialize(job):
         "id": job.id,
         "owner_id": job.owner_id,
         "status": job.status,
-        "items": job.items,
-        "processed": job.processed,
-        "total": job.total,
-        "failed": job.failed,
+        "steps": job.steps,
+        "results": job.results,
+        "ran_count": job.ran_count,
     }
 
 
 @router.post("")
 def create(body: CreateJobBody, user=Depends(current_user)):
-    job, code, err = service.create_job(user, body.items)
+    steps = [s.model_dump() for s in body.steps]
+    job, code, err = service.create_job(user, steps)
     if err:
         raise HTTPException(status_code=code, detail=err)
     return _serialize(job)
@@ -45,7 +45,9 @@ def run(job_id: str, user=Depends(current_user)):
     job, code, err = service.get_job(user, job_id)
     if err:
         raise HTTPException(status_code=code, detail=err)
-    job = service.run_job(job)
+    job, code, err = service.run_job(job)
+    if err:
+        raise HTTPException(status_code=code, detail=err)
     return _serialize(job)
 
 
